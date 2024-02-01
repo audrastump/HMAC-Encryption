@@ -29,6 +29,7 @@ int main(void)
     while(true)
     {
         //SENDING MESSAGE TO SERVER
+        printf("Client: ");
         std::string input;
         std::getline(std::cin, input);
         memset(&MESSAGE, 0, sizeof(MESSAGE));
@@ -39,7 +40,8 @@ int main(void)
         //RECEIVING MESSAGE FROM SERVER
         memset(&MESSAGE, 0, sizeof(MESSAGE));
         recv(client, (char*)&MESSAGE, sizeof(MESSAGE), 0);
-        printf("Client: ");
+        printf("Server: %s\n", MESSAGE);
+        
     }
     close(client);
     printf("Socket closed\n");
