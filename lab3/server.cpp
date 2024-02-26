@@ -8,8 +8,9 @@
 #include <openssl/err.h>
 
 //SERVER
+int hmacBufferLength = 32;
 int PORT = 8080;
-void print_hex(const unsigned char *data, int len) {
+void printHmac(const unsigned char *data, int len) {
     for (int i = 0; i < len; ++i) {
         printf("%02x", data[i]);
     }
@@ -34,9 +35,6 @@ void cal_hmac(unsigned char *mac, char *message) {
     HMAC_Init_ex(ctx, key, len, EVP_sha256(), NULL);
     HMAC_Update(ctx, (unsigned char *)message, strlen(message));
     HMAC_Final(ctx, mac, NULL);
-    unsigned char truncatedHMAC[32];
-    memcpy(truncatedHMAC, mac, 32);
-    memcpy(mac, truncatedHMAC, 32);
     HMAC_CTX_free(ctx);
 }
 
@@ -67,43 +65,35 @@ int main(void)
     char clientMessage[3000];
     while(true)
     {
-        // Receive HMAC from client
-        unsigned char receivedHMAC[32];
-        recv(client, receivedHMAC, 32, 0);
-
-        // Receive client message
+        // RECIEVE HMAC AND CLIENT MESSAGE
+        unsigned char receivedHMAC[hmacBufferLength];
+        recv(client, receivedHMAC, hmacBufferLength, 0);
         memset(clientMessage, 0, sizeof(clientMessage));
         recv(client, clientMessage, sizeof(clientMessage), 0);
         
-        // Calculate HMAC of received message
-        unsigned char calculatedHMAC[32];
+        // CALCULATE HMAC BASED ON CLIENT MESSAGE
+        unsigned char calculatedHMAC[hmacBufferLength];
         cal_hmac(calculatedHMAC, clientMessage);
-        
-
-        // Compare received HMAC with calculated HMAC
+        // Printing out both server's received HMAC and calculated HMAC
         printf("Calculated HMAC: ");
-        print_hex(calculatedHMAC, 32);
+        printHmac(calculatedHMAC, hmacBufferLength);
         printf("Received HMAC: ");
+        printHmac(receivedHMAC, hmacBufferLength);
         
-        print_hex(receivedHMAC, 32);
-        
-        
-        
-
+        //AUTHENTICATING HMAC
         bool authenticated = true;
-        for (int i = 0; i < 32; ++i) {
+        for (int i = 0; i < hmacBufferLength; ++i) {
         if (receivedHMAC[i] != calculatedHMAC[i]) {
             authenticated = false;
             break;
             }
         }
-
-
-        // Print received message and authentication result
-        printf("Received Message: %s\n", clientMessage);
-        printf("Authentication Result: %s\n", authenticated ? "Successful" : "Failed");
-
-        // Echo message back to client
+        // PRINT CLIENT MESSAGE AND AUTHENTICATION
+        printf("Client Message: %s\n", clientMessage);
+        printf("Authentication: %s\n", authenticated ? "Authentic Message" : "Not Authentic Message");
+        printf("Server: ");
+        //SERVER RESPONSE
+        
         std::string input;
         getline(std::cin, input);
         memset(&clientMessage, 0, sizeof(clientMessage));

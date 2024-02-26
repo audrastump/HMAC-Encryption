@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <openssl/hmac.h>
+//CLIENT
 using namespace std;
-
+int hmacBufferLength = 32;
 void cal_hmac(unsigned char *mac, const char *message) {
     //need a 32 byte key for the 256 bit encryption
     const char key[32] = {
@@ -18,7 +19,7 @@ void cal_hmac(unsigned char *mac, const char *message) {
     0x14, 0x15, 0x16, 0x17,
     0x18
     };
-    //creating and initializng our context
+    //CREATE/INITIALIZE CONTEXT
     unsigned int len = strlen(key);
     HMAC_CTX *ctx;
     ctx = HMAC_CTX_new();
@@ -29,7 +30,7 @@ void cal_hmac(unsigned char *mac, const char *message) {
     HMAC_Final(ctx, mac, NULL);
     HMAC_CTX_free(ctx);
 }
-void print_hex(const unsigned char *data, int len) {
+void printHmac(const unsigned char *data, int len) {
     for (int i = 0; i < len; ++i) {
         printf("%02x", data[i]);
     }
@@ -52,19 +53,19 @@ int main(void) {
     }
 
     while(true) {
+        //RETRIEVING CLIENT INPUT
         printf("Client: ");
         std::string input;
         std::getline(std::cin, input);
-        // Calculate HMAC
-        unsigned char mac[EVP_MAX_MD_SIZE];
-        cal_hmac(mac, input.c_str());
-        
-        printf("HMAC: ");
-        print_hex(mac, EVP_MAX_MD_SIZE);
 
-        // SEND HMAC MESSAGE
-        send(client, mac,32, 0);
-       
+        // CALCULATING AND PRINTING HMAC
+        unsigned char mac[hmacBufferLength];
+        cal_hmac(mac, input.c_str());
+        printf("HMAC: ");
+        printHmac(mac, hmacBufferLength);
+
+        // SEND HMAC AND CLIENT MESSAGE
+        send(client, mac, hmacBufferLength, 0);
         size_t inputLength = input.length();
         send(client, input.c_str(), inputLength, 0);
 
